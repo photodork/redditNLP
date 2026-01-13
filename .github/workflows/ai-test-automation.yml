@@ -1,0 +1,31 @@
+name: AI Test Automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  classify-and-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Classify PR (Hybrid)
+        run: python scripts/classify_pr.py
+
+      - name: Check test presence
+        run: python scripts/test_presence_check.py
+
+      - name: Generate tests if needed
+        run: python scripts/generate_tests.py
