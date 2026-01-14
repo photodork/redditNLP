@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -23,20 +24,33 @@ def fetch_jira_issue(issue_id):
     return response.json()
 
 # -------------------------
-# GitHub context
+# Load GitHub PR context (CORRECT WAY)
 # -------------------------
 
-branch_name = os.getenv("GITHUB_REF_NAME", "")
-combined_text = branch_name
+event_path = os.getenv("GITHUB_EVENT_PATH")
 
-print(f"🔎 Branch context: {branch_name}")
+if not event_path:
+    raise RuntimeError("GITHUB_EVENT_PATH not found")
+
+with open(event_path, "r") as f:
+    event = json.load(f)
+
+pr_title = event["pull_request"]["title"]
+branch_name = event["pull_request"]["head"]["ref"]
+
+combined_text = f"{pr_title} {branch_name}"
+
+print(f"🧾 PR Title: {pr_title}")
+print(f"🌿 Branch Name: {branch_name}")
+
+# -------------------------
+# Classification logic
+# -------------------------
 
 jira_id = extract_jira_id(combined_text)
 pr_type = "FEATURE"  # default
 
-# -------------------------
-# JIRA-based classification
-# -------------------------
+# ---- JIRA-based classification (PRIMARY) ----
 
 if jira_id:
     print(f"🔍 Extracted JIRA ID: {jira_id}")
@@ -52,17 +66,17 @@ if jira_id:
 
     except Exception as e:
         print(f"⚠️ JIRA lookup failed: {e}")
-        print("➡️ Falling back to branch-based logic")
+        print("➡️ Falling back to branch/title logic")
 
-# -------------------------
-# Fallback (your Phase 3 logic)
-# -------------------------
+# ---- Fallback (Phase 3 logic) ----
 
 if not jira_id:
     branch_lower = branch_name.lower()
-    if branch_lower.startswith("fix/") or branch_lower.startswith("bug/"):
+    title_lower = pr_title.lower()
+
+    if branch_lower.startswith("fix/") or branch_lower.startswith("bug/") or title_lower.startswith("fix"):
         pr_type = "BUG"
-    elif branch_lower.startswith("feat/") or branch_lower.startswith("feature/"):
+    elif branch_lower.startswith("feat/") or branch_lower.startswith("feature/") or title_lower.startswith("feat"):
         pr_type = "FEATURE"
 
 print(f"📌 Final PR Classification: {pr_type}")
