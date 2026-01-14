@@ -10,7 +10,3 @@ Examples:
 - feat: AITA-2 Add search functionality
 
 PRs that do not follow this convention may fail CI checks.
-
-
-line added
-#new line
