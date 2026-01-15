@@ -21,11 +21,14 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Classify PR (Hybrid)
+      - name: Classify PR (Phase 4)
         run: python scripts/classify_pr.py
 
       - name: Check test presence
         run: python scripts/test_presence_check.py
 
-      - name: Generate tests if needed
+      - name: Decide test generation action (Phase 5)
+        run: python scripts/test_generation_decider.py
+
+      - name: Generate tests (Phase 6)
         run: python scripts/generate_tests.py
